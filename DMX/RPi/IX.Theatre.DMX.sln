@@ -7,14 +7,20 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DmxClient", "DmxClient\DmxC
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Debug|ARM64.Build.0 = Debug|ARM64
+		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Debug|x64.ActiveCfg = Debug|x64
+		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Debug|x64.Build.0 = Debug|x64
+		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Release|ARM64.ActiveCfg = Release|ARM64
+		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Release|ARM64.Build.0 = Release|ARM64
+		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Release|x64.ActiveCfg = Release|x64
+		{79521055-FAFB-4F94-8A86-FBB2F7906919}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
