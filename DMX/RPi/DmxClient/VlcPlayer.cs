@@ -5,8 +5,6 @@ namespace DmxClient;
 
 internal class VlcPlayer : IDisposable
 {
-    private const int ProtectionTimeoutMilliseconds = 100;
-
     private readonly ILogger<VlcPlayer> _logger;
     private readonly LibVLC _libVlc;
     private readonly MediaPlayer _player;
@@ -80,12 +78,12 @@ internal class VlcPlayer : IDisposable
             return;
         }
         if (Interlocked.Exchange(ref _channelToPlay, channel) == channel) return;
-        if ((DateTime.Now - _lastUpdate).TotalMilliseconds < ProtectionTimeoutMilliseconds)
+        if ((DateTime.Now - _lastUpdate).TotalMilliseconds < Constants.ProtectionTimeoutMilliseconds)
         {
             // Flood prevention
             if (Interlocked.Exchange(ref _hasQueue, 1) == 1) return;
 
-            Task.Delay(ProtectionTimeoutMilliseconds).ContinueWith(_ => PlayInternal());
+            Task.Delay(Constants.ProtectionTimeoutMilliseconds).ContinueWith(_ => PlayInternal());
         }
         else
         {

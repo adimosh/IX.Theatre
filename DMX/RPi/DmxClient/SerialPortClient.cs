@@ -5,6 +5,7 @@ namespace DmxClient;
 
 internal class SerialPortClient : IAsyncDisposable
 {
+    
     private readonly ILogger<SerialPortClient> _logger;
     private readonly SerialPort _serialPort;
 
@@ -85,9 +86,12 @@ internal class SerialPortClient : IAsyncDisposable
         return true;
     }
 
-    private void InternalLoop(CancellationToken token)
+    private async Task InternalLoop(CancellationToken token)
     {
         if (_channels is not { } channels) return;
+
+        await Task.Yield();
+        
         try
         {
             while (!token.IsCancellationRequested)
@@ -122,6 +126,8 @@ internal class SerialPortClient : IAsyncDisposable
                 {
                     ValueChanged?.Invoke(this, channelValue);
                 }
+
+                await Task.Yield();
             }
         }
         catch (OperationCanceledException)
