@@ -1,11 +1,11 @@
 ﻿using DmxClient;
+using Microsoft.Extensions.Logging;
 using System.IO.Ports;
 
-// Command line argument validation and data 
 List<string> paths = new();
 Dictionary<int, int> channels = new();
 string? ttyPort = null;
-string? darkPath = null;
+bool setBrightness = false;
 
 #region Argument validation
 
@@ -58,16 +58,9 @@ foreach (var arg in args)
                 break;
             }
 
-        case "h:":
+        case "b":
             {
-                var pathText = arg[2..];
-                if (string.IsNullOrWhiteSpace(pathText) || pathText.IndexOfAny(Path.GetInvalidPathChars()) != -1)
-                {
-                    await Console.Error.WriteAsync($"The dark definition is not correct! Path definition: {pathText}");
-                    return;
-                }
-
-                darkPath = pathText;
+                setBrightness = true;
                 break;
             }
     }
@@ -97,13 +90,7 @@ if (paths.Count is < 1 or > 10)
     return;
 }
 
-if (string.IsNullOrWhiteSpace(darkPath))
-{
-    await Console.Error.WriteAsync("No path defined to play when dark!");
-    return;
-}
-
-Dictionary<int, string> playPaths = new() { { 0, darkPath } };
+Dictionary<int, string> playPaths = new(paths.Count);
 for (int i = 0; i < paths.Count; i++)
 {
     var arg = paths[i];
@@ -117,11 +104,20 @@ for (int i = 0; i < paths.Count; i++)
 
 #endregion
 
+#region Logging
+
+ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole(options =>
+{
+    options.LogToStandardErrorThreshold = LogLevel.Warning;
+}));
+
+#endregion
+
 #region Initialize VLC
 
-using var mediaPlayer = new VlcPlayer(playPaths);
-mediaPlayer.Play(0);
-mediaPlayer.SetBrightness(0);
+using var mediaPlayer = new VlcPlayer(playPaths, setBrightness, loggerFactory.CreateLogger<VlcPlayer>());
+mediaPlayer.Play(channels.Keys.First());
+mediaPlayer.SetValue(0);
 
 #endregion
 
@@ -197,7 +193,7 @@ void ValueChanged(object? sender, ChannelValueChangedEventArgs e)
     try
     {
         // ReSharper disable once AccessToDisposedClosure
-        mediaPlayer.SetBrightness(e.ChannelValue);
+        mediaPlayer.SetValue(e.ChannelValue);
     }
     catch (ObjectDisposedException)
     {

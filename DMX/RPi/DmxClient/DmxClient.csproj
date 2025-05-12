@@ -8,11 +8,14 @@
     <PlatformTargets>x64;arm64</PlatformTargets>
     <Prefer32Bit>false</Prefer32Bit>
     <Platforms>AnyCPU;x64;ARM64</Platforms>
+    <NuGetAuditMode>all</NuGetAuditMode>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="IX.Library" Version="1.0.3" />
     <PackageReference Include="LibVLCSharp" Version="3.9.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.4" />
     <PackageReference Include="System.IO.Ports" Version="9.0.4" />
   </ItemGroup>
 

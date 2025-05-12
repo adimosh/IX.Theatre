@@ -9,9 +9,8 @@ internal class SerialPortClient : IAsyncDisposable
     private Dictionary<int, int>? _channels;
     private int _isDisposed;
     private Task? _runningTask;
-
-    private int _maxValue;
     private int? _maxByPort;
+    private int _previousValue;
 
     public SerialPortClient(string ttyPort)
     {
@@ -46,8 +45,6 @@ internal class SerialPortClient : IAsyncDisposable
             await onError(SerialPortOperationResult.CannotOpenPort, e.Message);
             return false;
         }
-
-        var stream = port.BaseStream;
 
         WriteMessage("Start");
         if (ReadMessage() != "Go start")
@@ -90,8 +87,6 @@ internal class SerialPortClient : IAsyncDisposable
         if (_channels is not { } channels) return;
         try
         {
-            var stream = _serialPort.BaseStream;
-
             while (!token.IsCancellationRequested)
             {
                 var line = ReadMessage();
@@ -110,30 +105,25 @@ internal class SerialPortClient : IAsyncDisposable
 
                 channels[channel] = value;
 
-                var maxChannel = channels.MaxBy(p => p.Value);
+                var (channelId, channelValue) = channels.MaxBy(p => p.Value);
 
-                if (maxChannel.Value == 0)
+                if (channelValue != 0 && Interlocked.Exchange(ref _maxByPort, channelId) != channelId)
                 {
-                    _maxByPort = null;
-                    _maxValue = 0;
-
-                    MaxChannelChanged?.Invoke(this, 0);
-                    ValueChanged?.Invoke(this, 0);
+                    // We need to make sure that we do not change the channel when we get "0" as the channel value, because we might find ourselves
+                    // in the situation in which we get the first channel as maximum, when only doing operations on other channels - and that would
+                    // simply be a waste of resources constantly switching between videos
+                    MaxChannelChanged?.Invoke(this, _maxByPort);
                 }
-                else
+
+                if (Interlocked.Exchange(ref _previousValue, channelValue) != channelValue)
                 {
-                    if (_maxByPort != maxChannel.Key)
-                    {
-                        _maxByPort = maxChannel.Key;
-                        MaxChannelChanged?.Invoke(this, _maxByPort);
-                    }
-                    _maxValue = maxChannel.Value;
-                    ValueChanged?.Invoke(this, _maxValue);
+                    ValueChanged?.Invoke(this, channelValue);
                 }
             }
         }
         catch (OperationCanceledException)
         {
+            // There was cancellation - let's exit the loop
             return;
         }
         catch (Exception e)
