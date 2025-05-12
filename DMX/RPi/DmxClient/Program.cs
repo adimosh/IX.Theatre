@@ -2,7 +2,18 @@
 using Microsoft.Extensions.Logging;
 using System.IO.Ports;
 
-List<string> paths = new();
+#region Logging
+
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole(options =>
+{
+    options.LogToStandardErrorThreshold = LogLevel.Warning;
+}).SetMinimumLevel(LogLevel.Information));
+
+var logger = loggerFactory.CreateLogger("Program");
+
+#endregion
+
+List<string> paths = [];
 Dictionary<int, int> channels = new();
 string? ttyPort = null;
 bool setBrightness = false;
@@ -11,9 +22,16 @@ bool setBrightness = false;
 
 foreach (var arg in args)
 {
+    if (string.Equals(arg, "b", StringComparison.CurrentCultureIgnoreCase))
+    {
+        // Brightness instead of contrast - only one letter, let's treat it specially
+        setBrightness = true;
+        continue;
+    }
+
     if (arg.Length <= 2)
     {
-        await Console.Error.WriteAsync($"An argument is not well defined! Argument: {arg}");
+        logger.LogCritical("An argument is not well defined! Argument: {arg}", arg);
         return;
     }
 
@@ -24,7 +42,7 @@ foreach (var arg in args)
                 ttyPort = arg[2..];
                 if (string.IsNullOrWhiteSpace(ttyPort))
                 {
-                    await Console.Error.WriteAsync("The serial port is not correct!");
+                    logger.LogCritical("The serial port is not correct!");
                     return;
                 }
 
@@ -36,7 +54,7 @@ foreach (var arg in args)
                 var channelText = arg[2..];
                 if (string.IsNullOrWhiteSpace(channelText) || !int.TryParse(channelText, out int channel) || channel <= 0)
                 {
-                    await Console.Error.WriteAsync($"A channel definition is not correct! Channel definition: {channelText}");
+                    logger.LogCritical("A channel definition is not correct! Channel definition: {channel}", channelText);
                     return;
                 }
 
@@ -50,7 +68,7 @@ foreach (var arg in args)
                 var pathText = arg[2..];
                 if (string.IsNullOrWhiteSpace(pathText) || pathText.IndexOfAny(Path.GetInvalidPathChars()) != -1)
                 {
-                    await Console.Error.WriteAsync($"A path definition is not correct! Path definition: {pathText}");
+                    logger.LogCritical("A path definition is not correct! Path definition: {path}", pathText);
                     return;
                 }
 
@@ -58,35 +76,35 @@ foreach (var arg in args)
                 break;
             }
 
-        case "b":
-            {
-                setBrightness = true;
-                break;
-            }
+        default:
+        {
+            logger.LogWarning("", arg);
+            break;
+        }
     }
 }
 
 if (string.IsNullOrWhiteSpace(ttyPort))
 {
-    await Console.Error.WriteAsync("The serial port is not defined!");
+    logger.LogCritical("The serial port is not defined!");
 
-    Console.WriteLine("The following ports are open:");
+    logger.LogInformation("The following ports are open:");
     foreach (var portName in SerialPort.GetPortNames())
     {
-        Console.WriteLine($" - {portName}");
+        logger.LogInformation(" - {portName}", portName);
     }
     return;
 }
 
 if (channels.Count == 0)
 {
-    await Console.Error.WriteAsync("No channels defined!");
+    logger.LogCritical("No channels defined!");
     return;
 }
 
 if (paths.Count is < 1 or > 10)
 {
-    await Console.Error.WriteAsync("At least one and at most 10 files are supported to play at a time!");
+    logger.LogCritical("At least one and at most 10 files are supported to play at a time!");
     return;
 }
 
@@ -96,20 +114,13 @@ for (int i = 0; i < paths.Count; i++)
     var arg = paths[i];
     if (!File.Exists(arg))
     {
-        await Console.Error.WriteAsync($"File '{arg}' does not exist!");
+        logger.LogCritical("File '{file}' does not exist!", arg);
         return;
     }
     playPaths.Add(channels.ElementAt(i).Key, arg);
 }
 
-#endregion
-
-#region Logging
-
-ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole(options =>
-{
-    options.LogToStandardErrorThreshold = LogLevel.Warning;
-}));
+logger.LogInformation("Parsed arguments correctly.");
 
 #endregion
 
@@ -125,7 +136,7 @@ mediaPlayer.SetValue(0);
 
 CancellationTokenSource cts = new();
 
-await using SerialPortClient client = new(ttyPort);
+await using SerialPortClient client = new(ttyPort, loggerFactory.CreateLogger<SerialPortClient>());
 
 client.MaxChannelChanged += MaxChannelChanged;
 client.ValueChanged += ValueChanged;
@@ -134,7 +145,7 @@ client.ValueChanged += ValueChanged;
 
 #region Main operation
 
-var result = await client.Start(channels, async (operationResult, s) => await ReportErrorToUser(operationResult, s), cts.Token);
+var result = await client.Start(channels, cts.Token);
 
 if (!result) return;
 
@@ -148,33 +159,6 @@ return;
 
 #region Local functions
 
-async Task<bool> ReportErrorToUser(SerialPortOperationResult serialPortOperationResult, string? errMsg)
-{
-    switch (serialPortOperationResult)
-    {
-        case SerialPortOperationResult.CannotOpenPort:
-            await Console.Error.WriteAsync($"Could not open port! Message: {errMsg}");
-            return true;
-        case SerialPortOperationResult.PortCommunicationError:
-            await Console.Error.WriteAsync($"Serial port communication! Message: {errMsg}");
-            return true;
-        case SerialPortOperationResult.StartProtocolInvalid:
-            await Console.Error.WriteAsync("Start comm protocol invalid!");
-            return true;
-        case SerialPortOperationResult.ChannelProtocolInvalid:
-            await Console.Error.WriteAsync("Channel comm protocol invalid!");
-            return true;
-        case SerialPortOperationResult.MessageProtocolInvalid:
-            await Console.Error.WriteAsync($"Message comm protocol invalid! Message: {errMsg}");
-            return true;
-        case SerialPortOperationResult.ChannelInvalid:
-            await Console.Error.WriteAsync($"Message channel invalid! Message: {errMsg}");
-            return true;
-    }
-
-    return false;
-}
-
 void MaxChannelChanged(object? sender, MaxChannelChangedEventArgs e)
 {
     try
@@ -184,7 +168,7 @@ void MaxChannelChanged(object? sender, MaxChannelChangedEventArgs e)
     }
     catch (ObjectDisposedException)
     {
-        Console.Error.WriteLine("Attempted to play while player is already disposed!");
+        logger.LogError("Attempted to play while player is already disposed!");
     }
 }
 
@@ -197,7 +181,7 @@ void ValueChanged(object? sender, ChannelValueChangedEventArgs e)
     }
     catch (ObjectDisposedException)
     {
-        Console.Error.WriteLine("Attempted to play while player is already disposed!");
+        logger.LogError("Attempted to change value while player is already disposed!");
     }
 }
 

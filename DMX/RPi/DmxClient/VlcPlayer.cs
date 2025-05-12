@@ -20,11 +20,14 @@ internal class VlcPlayer : IDisposable
     private DateTime _lastUpdate;
     private int _channelToPlay = -1;
     private int _playingChannel = -1;
-    private float _previousValue = 0f;
+    private float _previousValue = -1f;
     private int _hasQueue;
 
     public VlcPlayer(Dictionary<int, string> channelPaths, bool setBrightness, ILogger<VlcPlayer> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(channelPaths);
+
         _logger = logger;
 
         try
