@@ -3,6 +3,14 @@
   <PropertyGroup>
     <!-- Software metadata -->
     <Version>0.1.0</Version>
+    <Title>IX.Theatre - DMX</Title>
+    <Authors>ixiancorp</Authors>
+    <Company>Moș A Adrian PFA</Company>
+    <Product>IX.Theatre</Product>
+    <Copyright>Copyright 2025 Adrian Moș</Copyright>
+    <RepositoryUrl>https://github.com/adimosh/IX.Theatre</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -14,9 +22,14 @@
     <PlatformTargets>x64;arm64</PlatformTargets>
     <Prefer32Bit>false</Prefer32Bit>
     <Platforms>x64;ARM64</Platforms>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <!-- Code style and analyzers -->
     <NuGetAuditMode>all</NuGetAuditMode>
     <WarningLevel>8</WarningLevel>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <ItemGroup>
