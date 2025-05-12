@@ -31,7 +31,7 @@ internal class SerialPortClient : IAsyncDisposable
     public EventHandler<MaxChannelChangedEventArgs>? MaxChannelChanged;
     public EventHandler<ChannelValueChangedEventArgs>? ValueChanged;
 
-    public async ValueTask<bool> Start(Dictionary<int, int> channels, CancellationToken cancellationToken)
+    public bool Start(Dictionary<int, int> channels, CancellationToken cancellationToken)
     {
         if (_isDisposed == 1) throw new ObjectDisposedException(nameof(SerialPortClient));
         if (_runningTask is not null) throw new InvalidOperationException("The serial port has already been opened.");

@@ -78,7 +78,7 @@ foreach (var arg in args)
 
         default:
         {
-            logger.LogWarning("", arg);
+            logger.LogWarning("Invalid argument: {arg}", arg);
             break;
         }
     }
@@ -145,7 +145,7 @@ client.ValueChanged += ValueChanged;
 
 #region Main operation
 
-var result = await client.Start(channels, cts.Token);
+var result = client.Start(channels, cts.Token);
 
 if (!result) return;
 
