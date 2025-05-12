@@ -14,15 +14,10 @@ var logger = loggerFactory.CreateLogger("Program");
 
 #endregion
 
-string? ttyPort;
-bool setBrightness;
-Dictionary<int, string>? playPaths;
-Dictionary<int, int>? channels;
-
 #region Argument validation
 
-if (!ArgumentParser.TryValidateArguments(args, loggerFactory.CreateLogger("ArgumentParser"), out setBrightness, out ttyPort, out playPaths,
-                                         out channels))
+if (!ArgumentParser.TryValidateArguments(args, loggerFactory.CreateLogger("ArgumentParser"), out var setBrightness, out var ttyPort, out var playPaths,
+                                         out var channels))
 {
     return;
 }
