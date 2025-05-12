@@ -1,13 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.IO.Ports;
 
-namespace DmxClient;
+namespace DmxClient.SerialPort;
 
 internal class SerialPortClient : IAsyncDisposable
 {
     
     private readonly ILogger<SerialPortClient> _logger;
-    private readonly SerialPort _serialPort;
+    private readonly System.IO.Ports.SerialPort _serialPort;
 
     private Dictionary<int, int>? _channels;
     private int _isDisposed;
@@ -20,7 +20,7 @@ internal class SerialPortClient : IAsyncDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         if (string.IsNullOrWhiteSpace(ttyPort)) throw new ArgumentNullException(nameof(ttyPort));
         
-        using var port = new SerialPort(ttyPort, 9600, Parity.None, 8, StopBits.One);
+        using var port = new System.IO.Ports.SerialPort(ttyPort, 9600, Parity.None, 8, StopBits.One);
         port.RtsEnable = true;
         port.Handshake = Handshake.None;
 

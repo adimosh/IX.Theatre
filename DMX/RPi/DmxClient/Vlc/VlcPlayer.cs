@@ -1,7 +1,7 @@
 ﻿using LibVLCSharp.Shared;
 using Microsoft.Extensions.Logging;
 
-namespace DmxClient;
+namespace DmxClient.Vlc;
 
 internal class VlcPlayer : IDisposable
 {

@@ -1,6 +1,6 @@
-﻿namespace DmxClient;
+﻿namespace DmxClient.SerialPort;
 
-public class ChannelValueChangedEventArgs(int channelValue) : EventArgs
+internal class ChannelValueChangedEventArgs(int channelValue) : EventArgs
 {
     public int ChannelValue => channelValue;
 

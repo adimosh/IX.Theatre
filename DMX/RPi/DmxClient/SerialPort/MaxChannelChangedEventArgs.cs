@@ -1,6 +1,6 @@
-﻿namespace DmxClient;
+﻿namespace DmxClient.SerialPort;
 
-public class MaxChannelChangedEventArgs(int channelId) : EventArgs
+internal class MaxChannelChangedEventArgs(int channelId) : EventArgs
 {
     public int ChannelId => channelId;
 
