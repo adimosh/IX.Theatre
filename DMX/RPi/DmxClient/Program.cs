@@ -16,8 +16,8 @@ var logger = loggerFactory.CreateLogger("Program");
 
 #region Argument validation
 
-if (!ArgumentParser.TryValidateArguments(args, loggerFactory.CreateLogger("ArgumentParser"), out var setBrightness, out var ttyPort, out var playPaths,
-                                         out var channels))
+if (!ArgumentParser.TryValidateArguments(args, loggerFactory.CreateLogger("ArgumentParser"), out var setBrightness, out var ttyPort, out var darkPath, out var customArguments,
+                                         out var playPaths, out var channels))
 {
     return;
 }
@@ -28,7 +28,7 @@ logger.LogInformation("Parsed arguments correctly.");
 
 #region Initialize VLC
 
-using var mediaPlayer = new VlcPlayer(playPaths, setBrightness, loggerFactory.CreateLogger<VlcPlayer>());
+using var mediaPlayer = new VlcPlayer(playPaths, setBrightness, darkPath, customArguments, loggerFactory.CreateLogger<VlcPlayer>());
 mediaPlayer.Play(channels.Keys.First());
 mediaPlayer.SetValue(0);
 
@@ -38,7 +38,7 @@ mediaPlayer.SetValue(0);
 
 CancellationTokenSource cts = new();
 
-await using SerialPortClient client = new(ttyPort, loggerFactory.CreateLogger<SerialPortClient>());
+await using SerialPortClient client = new(ttyPort, darkPath != null, loggerFactory.CreateLogger<SerialPortClient>());
 
 client.MaxChannelChanged += MaxChannelChanged;
 client.ValueChanged += ValueChanged;

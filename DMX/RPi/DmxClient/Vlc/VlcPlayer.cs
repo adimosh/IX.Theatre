@@ -12,16 +12,17 @@ internal class VlcPlayer : IDisposable
     private readonly List<int> _channels;
     private readonly string _valueOptionText;
     private readonly VideoAdjustOption _valueOption;
+    private readonly bool _hasDarkPath;
 
     private int _isDisposed;
-    
+
     private DateTime _lastUpdate;
     private int _channelToPlay = -1;
     private int _playingChannel = -1;
     private float _previousValue = -1f;
     private int _hasQueue;
 
-    public VlcPlayer(Dictionary<int, string> channelPaths, bool setBrightness, ILogger<VlcPlayer> logger)
+    public VlcPlayer(Dictionary<int, string> channelPaths, bool setBrightness, string? darkPath, List<string> customArguments, ILogger<VlcPlayer> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(channelPaths);
@@ -31,9 +32,16 @@ internal class VlcPlayer : IDisposable
         try
         {
             Core.Initialize();
-            List<string> inputParams = new(channelPaths.Count + 1);
-            inputParams.AddRange(channelPaths.Values);
-            inputParams.Add("--input-repeat=2");
+            List<string> inputParams = new(customArguments.Count + 1);
+            if (customArguments.Count > 0)
+            {
+                customArguments.ForEach(inputParams.Add);
+            }
+            else
+            {
+                inputParams.Add("--input-repeat=2");
+            }
+
             _libVlc = new(inputParams.ToArray());
             if (setBrightness)
             {
@@ -53,12 +61,19 @@ internal class VlcPlayer : IDisposable
 
             _media = new(_libVlc);
 
-            _channels = new(channelPaths.Count);
+            _channels = new(channelPaths.Count + 1);
 
             foreach (var p in channelPaths)
             {
                 _media.AddMedia(new(_libVlc, p.Value));
                 _channels.Add(p.Key);
+            }
+
+            if (darkPath is not null)
+            {
+                _media.AddMedia(new(_libVlc, darkPath));
+                _channels.Add(-1);
+                _hasDarkPath = true;
             }
         }
         catch (Exception e)
@@ -98,7 +113,7 @@ internal class VlcPlayer : IDisposable
         _player.Media = _media[_channels.IndexOf(_channelToPlay)];
         _lastUpdate = DateTime.Now;
         Interlocked.Exchange(ref _hasQueue, 0);
-        
+
         if (_player.IsPlaying) return;
 
         // If the player is not currently playing, for some reason, let's start it
@@ -123,17 +138,29 @@ internal class VlcPlayer : IDisposable
             valueToSet = 255;
         }
 
-        // While both Brightness and Contrast allow from 0f to 2f, let's set it 1-based, as values above 1
-        // (especially for brightness) will just wash out the colors without adding too much to the image
-        var value = valueToSet / 255f;
+        if (valueToSet == 0 && _hasDarkPath)
+        {
+            if (_previousValue == 0) return;
 
-        // Let's not bother if there's nothing to adjust
-        if (Math.Abs(value - _previousValue) < float.Epsilon) return;
-        
-        _previousValue = value;
-        _logger.LogInformation("Setting channel value {value} as {option}.", valueToSet, _valueOptionText);
+            // We have a dark path, and the channel value is 0
+            Play(-1);
+            Interlocked.Exchange(ref _previousValue, 0);
+            _logger.LogInformation("Setting dark path as the value is 0.");
+        }
+        else
+        {
+            // While both Brightness and Contrast allow from 0f to 2f, let's set it 1-based, as values above 1
+            // (especially for brightness) will just wash out the colors without adding too much to the image
+            var value = valueToSet / 255f;
 
-        _player.SetAdjustFloat(_valueOption, value);
+            // Let's not bother if there's nothing to adjust
+            if (Math.Abs(value - _previousValue) < float.Epsilon) return;
+
+            _previousValue = value;
+            _logger.LogInformation("Setting channel value {value} as {option}.", valueToSet, _valueOptionText);
+
+            _player.SetAdjustFloat(_valueOption, value);
+        }
     }
 
     /// <summary>
@@ -142,7 +169,7 @@ internal class VlcPlayer : IDisposable
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _isDisposed, 1) == 1) return;
-        
+
         _player.Stop();
 
         foreach (var media in _media) media.Dispose();

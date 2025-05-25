@@ -5,9 +5,9 @@ namespace DmxClient.SerialPort;
 
 internal class SerialPortClient : IAsyncDisposable
 {
-    
     private readonly ILogger<SerialPortClient> _logger;
     private readonly System.IO.Ports.SerialPort _serialPort;
+    private readonly bool _hasDarkPath;
 
     private Dictionary<int, int>? _channels;
     private int _isDisposed;
@@ -15,10 +15,11 @@ internal class SerialPortClient : IAsyncDisposable
     private int _maxByPort = -1;
     private int _previousValue = -1;
 
-    public SerialPortClient(string ttyPort, ILogger<SerialPortClient> logger)
+    public SerialPortClient(string ttyPort, bool hasDarkPath, ILogger<SerialPortClient> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         if (string.IsNullOrWhiteSpace(ttyPort)) throw new ArgumentNullException(nameof(ttyPort));
+        _hasDarkPath = hasDarkPath;
         
         using var port = new System.IO.Ports.SerialPort(ttyPort, 9600, Parity.None, 8, StopBits.One);
         port.RtsEnable = true;
@@ -122,8 +123,14 @@ internal class SerialPortClient : IAsyncDisposable
                     MaxChannelChanged?.Invoke(this, _maxByPort);
                 }
 
-                if (Interlocked.Exchange(ref _previousValue, channelValue) != channelValue)
+                var previousValue = Interlocked.Exchange(ref _previousValue, channelValue);
+                if (previousValue != channelValue)
                 {
+                    if (_hasDarkPath && previousValue == 0)
+                    {
+                        // If there is a dark path, let's re-send channel changed, aas there may be an issue
+                        MaxChannelChanged?.Invoke(this, _maxByPort);
+                    }
                     ValueChanged?.Invoke(this, channelValue);
                 }
 

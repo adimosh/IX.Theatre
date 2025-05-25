@@ -5,13 +5,18 @@ namespace DmxClient.ArgumentValidation;
 
 internal static class ArgumentParser
 {
-    internal static bool TryValidateArguments(string[] args, ILogger logger, out bool setBrightness, [NotNullWhen(true)] out string? ttyPort, [NotNullWhen(true)] out Dictionary<int, string>? playPaths, [NotNullWhen(true)] out Dictionary<int, int>? channels)
+    internal static bool TryValidateArguments(
+        string[] args, ILogger logger, out bool setBrightness, [NotNullWhen(true)] out string? ttyPort, out string? darkPath, out List<string> customArguments,
+        [NotNullWhen(true)] out Dictionary<int, string>? playPaths,
+        [NotNullWhen(true)] out Dictionary<int, int>? channels)
     {
         ttyPort = null;
         setBrightness = false;
         playPaths = null;
         channels = null;
-
+        darkPath = null;
+        
+        customArguments = new();
         List<string> paths = new();
 
         foreach (var arg in args)
@@ -65,7 +70,7 @@ internal static class ArgumentParser
                             logger.LogCritical("A path definition is not correct! Path definition: {path}", pathText);
                             return false;
                         }
-                        if (!File.Exists(arg))
+                        if (!File.Exists(pathText))
                         {
                             logger.LogCritical("File '{file}' does not exist!", pathText);
                             return false;
@@ -75,9 +80,27 @@ internal static class ArgumentParser
                         break;
                     }
 
+                case "h:":
+                    {
+                        var pathText = arg[2..];
+                        if (string.IsNullOrWhiteSpace(pathText) || pathText.IndexOfAny(Path.GetInvalidPathChars()) != -1)
+                        {
+                            logger.LogCritical("A path definition is not correct! Path definition: {path}", pathText);
+                            return false;
+                        }
+                        if (!File.Exists(pathText))
+                        {
+                            logger.LogCritical("File '{file}' does not exist!", pathText);
+                            return false;
+                        }
+
+                        darkPath = pathText;
+                        break;
+                    }
+
                 default:
                     {
-                        logger.LogWarning("Invalid argument: {arg}", arg);
+                        customArguments.Add(arg);
                         break;
                     }
             }
