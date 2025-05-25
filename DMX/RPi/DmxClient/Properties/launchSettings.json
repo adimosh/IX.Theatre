@@ -11,6 +11,10 @@
     "Play with dark path on Adrian's PC": {
       "commandName": "Project",
       "commandLineArgs": "s:COM2 c:1 c:2 \"f:C:\\Users\\adimo\\OneDrive\\Work\\Theatre\\Vizitatorii\\Heart Monitor standard.mp4\" \"f:C:\\Users\\adimo\\OneDrive\\Work\\Theatre\\Vizitatorii\\Heart Monitor glitchy.mp4\" \"h:C:\\Users\\adimo\\OneDrive\\Work\\Theatre\\Vizitatorii\\Black screen.mp4\""
+    },
+    "Dark path and VLC arguments": {
+      "commandName": "Project",
+      "commandLineArgs": "s:COM2 c:1 c:2 \"f:C:\\Users\\adimo\\OneDrive\\Work\\Theatre\\Vizitatorii\\Heart Monitor standard.mp4\" \"f:C:\\Users\\adimo\\OneDrive\\Work\\Theatre\\Vizitatorii\\Heart Monitor glitchy.mp4\" \"h:C:\\Users\\adimo\\OneDrive\\Work\\Theatre\\Vizitatorii\\Black screen.mp4\" --input-repeat=2 --video-filter=adjust --vout=direct3d11"
     }
   }
 }
